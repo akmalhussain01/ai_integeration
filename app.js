@@ -16,10 +16,11 @@ async function main() {
     // frequency_penalty: 0.5,
     // presence_penalty: 0.5,
     // max_completion_tokens: 100,
+    response_format:{type:"json_object"},
     messages: [
         {
           role: "system",
-          content: "jarvis , a smart  personal assistant ",
+          content: "jarvis , a smart  personal assistant give me the response in json format and in a single word ",
         },
       {
         role: "user",
