@@ -64,6 +64,14 @@ async function main() {
 
   for(const tool of toolCall){
     console.log(`tools:${JSON.stringify(tool)}`)
+
+    const functionName=tool.function.name
+    const functionArgs=tool.function.arguments
+
+    if(functionName==="webSearch"){
+      const result = await websearch(functionArgs)
+      console.log(`result:${result}`)
+    }
   }
 
 
@@ -72,6 +80,9 @@ async function main() {
 main()
 
 const websearch = async ({ query }) => {
+
+  console.log('calling webSearch...');
+  
   return "claude lastest model is fable 5"
 }
 
