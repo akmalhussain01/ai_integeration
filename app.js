@@ -1,10 +1,10 @@
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
+import { tavily } from "@tavily/core";
 
 dotenv.config();
 const groq = new Groq();
-
-
+const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
 
 
 async function main() {
@@ -62,14 +62,14 @@ async function main() {
     return;
   }
 
-  for(const tool of toolCall){
+  for (const tool of toolCall) {
     console.log(`tools:${JSON.stringify(tool)}`)
 
-    const functionName=tool.function.name
-    const functionArgs=tool.function.arguments
+    const functionName = tool.function.name
+    const functionArgs = tool.function.arguments
 
-    if(functionName==="webSearch"){
-      const result = await websearch(functionArgs)
+    if (functionName === "webSearch") {
+      const result = await websearch(JSON.parse(functionArgs))
       console.log(`result:${result}`)
     }
   }
@@ -82,7 +82,13 @@ main()
 const websearch = async ({ query }) => {
 
   console.log('calling webSearch...');
-  
-  return "claude lastest model is fable 5"
+
+  const response = await tvly.search(query);
+
+  const result = response.results.map(result => result.content).join('\n\n')
+
+  // console.log("final results from web",result);
+
+  return result
 }
 
