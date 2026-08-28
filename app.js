@@ -1,126 +1,150 @@
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
 import { tavily } from "@tavily/core";
+import readline, { createInterface } from "readline/promises";
 
 dotenv.config();
 const groq = new Groq();
 const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
-
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
 async function main() {
 
   const messages = [
     {
       role: "system",
-      content: `you are a smart  personal assistant and give me the answers for the asked questions and the answer should be short.
+      content: `you are a smart  personal assistant named Jarvis and give me the answers for the asked questions and the answer should be short and to the point.
         you have access the following tools 
         1.webSearch: Use this tool to get the latest information and real time data from the internet. You should only use this tool when you need to get the latest information and real time data from the internet.
         `,
     },
-    {
-      role: "user",
-      content: "what is the latest model of claude code now ",
-    },
+  //   {
+  //     role: "user",
+  //     content: "Hi, who are you?",
+  //   },
   ]
 
-  const completion = await groq.chat.completions.create({
-    model: "openai/gpt-oss-120b",
-    temperature: 0,
-    // top_p: 0.8,
-    // stop:'ne',
-    // frequency_penalty: 0.5,
-    // presence_penalty: 0.5,
-    // max_completion_tokens: 100,
-    // response_format:{type:"json_object"},
-    messages:messages,
 
-    tools: [
-      {
-        "type": "function",
-        "function": {
-          "name": "webSearch",
-          "description": "Use this tool to get the latest information and real time data from the internet. You should only use this tool when you need to get the latest information and real time data from the internet.",
-          "parameters": {
-            // JSON Schema object
-            "type": "object",
-            "properties": {
-              "query": {
-                "type": "string",
-                "description": "The search query to get the latest information and real time data from the internet."
+  //user prompt loop 
+  while (true) {
+
+    const userInput = await rl.question(`Akmal: `);
+    messages.push({
+      role: "user",
+      content: userInput,
+    });
+
+
+    if (userInput === "exit" || userInput === "quit") {
+      console.log("Exiting...");
+      break;
+    }
+
+    //llm prompt loop
+    while (true) {
+      const completion = await groq.chat.completions.create({
+        model: "openai/gpt-oss-120b",
+        temperature: 0,
+        // top_p: 0.8,
+        // stop:'ne',
+        // frequency_penalty: 0.5,
+        // presence_penalty: 0.5,
+        // max_completion_tokens: 100,
+        // response_format:{type:"json_object"},
+        messages: messages,
+
+        tools: [
+          {
+            "type": "function",
+            "function": {
+              "name": "webSearch",
+              "description": "Use this tool to get the latest information and real time data from the internet. You should only use this tool when you need to get the latest information and real time data from the internet.",
+              "parameters": {
+                // JSON Schema object
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "The search query to get the latest information and real time data from the internet."
+                  }
+                },
+                "required": ["query"]
               }
-            },
-            "required": ["query"]
+            }
           }
+        ],
+        tool_choice: "auto"
+      });
+
+
+      messages.push(completion.choices[0].message)
+
+      const toolCall = completion.choices[0].message.tool_calls;
+      if (!toolCall) {
+        console.log(`Jarvis: ${completion.choices[0].message.content}`);
+        break;
+      }
+
+
+      for (const tool of toolCall) {
+        // console.log(`tools:${JSON.stringify(tool)}`)
+
+        const functionName = tool.function.name
+        const functionArgs = tool.function.arguments
+
+        if (functionName === "webSearch") {
+          const result = await websearch(JSON.parse(functionArgs))
+          // console.log(`result:${JSON.stringify(result)}`)
+          messages.push({
+            tool_call_id: tool.id,
+            role: "tool",
+            name: functionName,
+            content: result
+          })
         }
       }
-    ],
-    tool_choice: "auto"
-  });
-
-
-  messages.push(completion.choices[0].message)
-
-  const toolCall = completion.choices[0].message.tool_calls;
-  if (!toolCall) {
-    console.log(completion.choices[0].message.content);
-    return;
-  }
-
-
-  for (const tool of toolCall) {
-    console.log(`tools:${JSON.stringify(tool)}`)
-
-    const functionName = tool.function.name
-    const functionArgs = tool.function.arguments
-
-    if (functionName === "webSearch") {
-      const result = await websearch(JSON.parse(functionArgs))
-      console.log(`result:${result}`)
-      messages.push({
-        tool_call_id: tool.id,
-        role: "tool",
-        name: functionName,
-        content: result
-      })
     }
   }
 
 
-   const completion2 = await groq.chat.completions.create({
-    model: "openai/gpt-oss-120b",
-    temperature: 0,
-    // top_p: 0.8,
-    // stop:'ne',
-    // frequency_penalty: 0.5,
-    // presence_penalty: 0.5,
-    // max_completion_tokens: 100,
-    // response_format:{type:"json_object"},
-    messages:messages,
+  //  const completion2 = await groq.chat.completions.create({
+  //   model: "openai/gpt-oss-120b",
+  //   temperature: 0,
+  //   // top_p: 0.8,
+  //   // stop:'ne',
+  //   // frequency_penalty: 0.5,
+  //   // presence_penalty: 0.5,
+  //   // max_completion_tokens: 100,
+  //   // response_format:{type:"json_object"},
+  //   messages:messages,
 
-    tools: [
-      {
-        "type": "function",
-        "function": {
-          "name": "webSearch",
-          "description": "Use this tool to get the latest information and real time data from the internet. You should only use this tool when you need to get the latest information and real time data from the internet.",
-          "parameters": {
-            // JSON Schema object
-            "type": "object",
-            "properties": {
-              "query": {
-                "type": "string",
-                "description": "The search query to get the latest information and real time data from the internet."
-              }
-            },
-            "required": ["query"]
-          }
-        }
-      }
-    ],
-    tool_choice: "auto"
-  });
+  //   tools: [
+  //     {
+  //       "type": "function",
+  //       "function": {
+  //         "name": "webSearch",
+  //         "description": "Use this tool to get the latest information and real time data from the internet. You should only use this tool when you need to get the latest information and real time data from the internet.",
+  //         "parameters": {
+  //           // JSON Schema object
+  //           "type": "object",
+  //           "properties": {
+  //             "query": {
+  //               "type": "string",
+  //               "description": "The search query to get the latest information and real time data from the internet."
+  //             }
+  //           },
+  //           "required": ["query"]
+  //         }
+  //       }
+  //     }
+  //   ],
+  //   tool_choice: "auto"
+  // });
 
-  console.log(completion2.choices[0].message);
+  // console.log(completion2.choices[0].message);
+
+
+  rl.close();
 
 }
 main()
