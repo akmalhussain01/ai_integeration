@@ -1,12 +1,14 @@
 const userInput = document.getElementById("input")
+const sendButton = document.getElementById("sendBtn")
 
-document.addEventListener('keyup', handleEnter)
+userInput.addEventListener('keyup', handleEnter)
+sendButton.addEventListener('click', sendchat)
 
 function handleEnter(event) {
 
-
     if (event.key === "Enter" && !event.shiftKey) {
         const usertext = userInput.value.trim()
+
         if (!usertext) {
             return;
         }
@@ -14,13 +16,25 @@ function handleEnter(event) {
         generate(usertext)
     }
 
-
 }
 
 function generate(usertext) {
+
     const msg = document.createElement("div")
-    msg.className = `max-w-3xl bg-gray-800 rounded-lg  mx-auto px-3 sm:px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6`
+    msg.className = "max-w-[75%] bg-gray-800 rounded-2xl px-4 py-2.5 ml-auto mr-3 sm:mr-4 mb-2 sm:mb-3 break-words"
     msg.textContent = usertext
     document.getElementById("messages").appendChild(msg)
     userInput.value = ""
+
 }
+
+function sendchat(e) {
+
+    e.preventDefault()
+    const usertext = userInput.value.trim()
+
+    if (!usertext) {
+        return;
+    }
+    generate(usertext)
+}   
