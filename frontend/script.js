@@ -11,16 +11,16 @@ function handleEnter(event) {
             return;
         }
         console.log("User input:", usertext)
+        generate(usertext)
     }
 
-    generate(usertext)
 
 }
 
 function generate(usertext) {
     const msg = document.createElement("div")
-    msg.className = `max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6`
+    msg.className = `max-w-3xl bg-gray-800 rounded-lg  mx-auto px-3 sm:px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6`
     msg.textContent = usertext
-    document.getElementById("chat").appendChild(msg)
+    document.getElementById("messages").appendChild(msg)
     userInput.value = ""
 }
