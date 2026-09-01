@@ -18,10 +18,16 @@ app.use(express.urlencoded());
 //post req for llm 
 
 app.route('/chat').post(async (req, res) => {
-    const { message } = req.body;
+    const { message, threadId } = req.body;
     console.log("usermessage:", message);
 
-    const result = await generate(message);
+    if (!message || !threadId) {
+        res.status(400).json({
+            message: 'all fields are requried'
+        })
+    }
+
+    const result = await generate(message, threadId);
     console.log(`Jarvis ${result}`);
 
 

@@ -1,24 +1,42 @@
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
 import { tavily } from "@tavily/core";
+import NodeCache from "node-cache";
 
 dotenv.config();
 
 const groq = new Groq();
+const cache = new NodeCache({ stdTTL: 60 * 60 * 24 }); // 24 hours
 const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
 
-export async function generate(userMessage) {
+export async function generate(userMessage, threadId) {
 
-    const messages = [
+    const basemessages = [
         {
             role: "system",
-            content: `you are a smart  personal assistant named Jarvis and give me the answers for the asked questions and the answer should be short and to the point.
-        you have access the following tools 
-        1.webSearch: Use this tool to get the latest information and real time data from the internet. You should only use this tool when you need to get the latest information and real time data from the internet.
-        `,
-        },
+            content: `# Identity
+You are Jarvis, a personal AI assistant.
+
+# Response Rules
+- Always answer in short, direct, to-the-point responses.
+- No filler, no preamble, no restating the question.
+- Plain conversational language only — never mention tools, functions, APIs, "web_search", or any internal process by name.
+- Never say things like "I searched the web" or "using the webSearch tool" — just give the answer as if you already knew it.
+- If you're unsure or can't find an answer, say so briefly instead of guessing.
+
+# Tool Usage
+You have access to:
+1. web_search — for real-time, current, or fast-changing information (news, prices, scores, current events, "latest" or "today" queries, or anything after your knowledge cutoff).
+
+Rules for tool use:
+- Only call web_search when the answer genuinely requires current/real-time data.
+- Do not use it for general knowledge, definitions, math, or static facts you already know.
+- Never expose the tool name, arguments, or call syntax in your reply — the user should only see the final answer.
+- After retrieving results, synthesize them into a short natural-language answer; do not dump raw search output.`,
+        }
     ]
 
+    const messages = cache.get(threadId) || basemessages;
 
     messages.push({
         role: "user",
@@ -65,7 +83,11 @@ export async function generate(userMessage) {
         messages.push(completion.choices[0].message)
 
         const toolCall = completion.choices[0].message.tool_calls;
+
         if (!toolCall) {
+            cache.set(threadId, messages);
+            console.log(cache);
+            
             return completion.choices[0].message.content;
         }
 
